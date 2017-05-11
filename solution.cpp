@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <cmath>
+#include <bitset>
 
 
 using namespace std;
@@ -72,7 +74,6 @@ void printMaze(vector<vector<maze_point>> maze_to_print) {
     }
 }
 
-
 /**
  *
  *  a)
@@ -111,7 +112,6 @@ void printMaze(vector<vector<maze_point>> maze_to_print) {
  *  right->left, / => top->down
  *  down->top, / => left->right
  * */
-
 
 bool checkIfMirrorSetupCollectsAllDiamonds(vector<vector<maze_point>> maze, vector<maze_point*> diamonds) {
     int current_laser_height = 1;
@@ -228,15 +228,10 @@ bool checkIfMirrorSetupCollectsAllDiamonds(vector<vector<maze_point>> maze, vect
 // i generujemy wszystkie podzbiory juz ze wstawionymi odpoiwdnimi labiryntam
 // dla tych labiryntow odpalamy checkIfMirrorSetupCollectsAllDiamonds
 
-void putQuestionMarkIntoMaze(const vector<int>& v) {
+void putQuestionMarkIntoMaze(const vector<int>& v, int mirror_no) {
     auto maze_to_return = maze;
-//    cout << "combination no " << (++count) << ": ";
     for (int i = 0; i < v.size(); ++i) {
         map_iterator = map_coordinate.find(v[i]);
-//        cout << endl;
-//        cout << "HEIGHT" << map_iterator->second.height;
-//        cout << "WIDTH" << map_iterator->second.width;
-//        cout << endl;
         if( map_iterator == map_coordinate.end()) {
             // something went wrong
         }
@@ -244,21 +239,16 @@ void putQuestionMarkIntoMaze(const vector<int>& v) {
             int height = map_iterator->second.height;
             int width = map_iterator->second.width;
             maze_to_return[height][width].value = '?';
-//            cout << height << " " << width << " ";
         }
-//        cout << v[i] << " ";
 
     }
-//    cout << "] " << endl;
-//    printMaze(maze_to_return);
     mazes_with_question_marks.push_back(maze_to_return);
-//    cout << endl;
 }
 
 
 void findAllPossibleMirrorPlaces(int offset, int k) {
     if(k == 0 ) {
-        putQuestionMarkIntoMaze(combination);
+        putQuestionMarkIntoMaze(combination, k);
         return;
     }
     for (int i = offset; i <= choosen_combination.size() - k; ++i) {
@@ -267,11 +257,45 @@ void findAllPossibleMirrorPlaces(int offset, int k) {
         combination.pop_back();
     }
 }
+vector<bool> getBitSet(int x, int limit){
+    vector<bool> s(int(ceil(log(limit))));
+    int idx = 0;
+    while(x>0){
+    s.push_back((x%2));
+    x=x/2;
+   }
+   reverse(s.begin(), s.end());
+   return s;
+}
 
-// TODO: implemet
-//vector<vector<vector<maze_point>>> findAllMirrorPlaces() {
-//} // pytajnik zamienia na wszystkie mozliwe kombinacje / \
 
+void findAllMirrorPlaces() {
+    long all_possible_combinations_of_mirrors_for_this_maze = pow(2.0, mirror_no);
+    for(int i=0; i<mazes_with_question_marks.size(); i++) {
+        for(int j=0; j<all_possible_combinations_of_mirrors_for_this_maze; j++) {
+            auto processed_maze = mazes_with_question_marks[i];
+            auto bs = getBitSet(j, all_possible_combinations_of_mirrors_for_this_maze);
+                                                                                                                                        //            cout << "SIZE" << bs.size() << endl;
+                                                                                                                                        //            printMaze(processed_maze);
+
+            int processed_bit = 0;
+            for(int height_tmp=0; height_tmp<height; height_tmp++) {
+                for(int width_tmp=0; width_tmp<width; width_tmp++) {
+                    if(processed_maze[height_tmp][width_tmp].value == '?') {
+                            if(bs[processed_bit]) {
+                                processed_maze[height_tmp][width_tmp].value = '\\';
+                            } else {
+                                processed_maze[height_tmp][width_tmp].value = '/';
+                            }
+                        processed_bit += 1;
+                        }
+                    }
+                }
+                mazes_with_mirrors.push_back(processed_maze);
+            }
+//    }
+}
+}
 
 int main() {
     readInput();
@@ -291,11 +315,17 @@ int main() {
 // }
     int n = coordinate_id;
     int k = mirror_no;
+    cout << height << " " << width << endl;
+    cout << mirror_no << endl;
     for (int i = 0; i < n; ++i) { choosen_combination.push_back(i); }
     findAllPossibleMirrorPlaces(0, k);
-    for(int i=0; i<mazes_with_question_marks.size(); i++) {
-        printMaze(mazes_with_question_marks[i]);
-        cout << endl;
+    findAllMirrorPlaces();
+
+    for(auto maze : mazes_with_mirrors) {
+        if(checkIfMirrorSetupCollectsAllDiamonds(maze, diamonds)) {
+            printMaze(maze);
+            break;
+        }
     }
     return 0;
 }
