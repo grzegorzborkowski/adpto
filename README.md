@@ -8,7 +8,7 @@ To run some extra tests:
 ```
 python3 test_runner.py
 ```
-To keep otuput of execution:
+To keep output of execution:
 ```
 python3 test_runner.py -no_remove
 ```
